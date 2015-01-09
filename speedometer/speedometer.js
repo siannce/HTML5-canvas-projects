@@ -209,7 +209,7 @@ function drawTextMarkers(options) {
   applyDefaultContextSettings(options);
 
   // Font styling
-  options.ctx.font = options.font;
+  options.ctx.font = options.font + fontPx + "px";
   options.ctx.textBaseline = 'top';
 
   options.ctx.beginPath();
@@ -350,7 +350,7 @@ function buildOptionsAsJSON(canvas, scaleFactor, xOffset, yOffset, additionalOpt
     smallTickLength: 5,                         // Length of the small ticks
     largeTickLineWidth: 3,                      // Line width of the large ticks
     largeTickLength: 10,                        // Length of the large ticks
-    font: "italic sans-serif 10px",             // Name of font to use
+    font: "italic sans-serif",                  // Name of font to use
     fontPx: 10,                                 // Font height in pixels
     colorArcOffset: 10,                         // Offset of the color arc
     colorArcWidth: 5,                           // Width of the color arc
