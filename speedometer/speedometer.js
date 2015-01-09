@@ -209,7 +209,7 @@ function drawTextMarkers(options) {
   applyDefaultContextSettings(options);
 
   // Font styling
-  options.ctx.font = options.font + fontPx + "px";
+  options.ctx.font = options.font + " " + fontPx + "px";
   options.ctx.textBaseline = 'top';
 
   options.ctx.beginPath();
