@@ -209,7 +209,7 @@ function drawTextMarkers(options) {
   applyDefaultContextSettings(options);
 
   // Font styling
-  options.ctx.font = options.font + " " + fontPx + "px";
+  options.ctx.font = options.font + " " + options.fontPx + "px";
   options.ctx.textBaseline = 'top';
 
   options.ctx.beginPath();
@@ -308,7 +308,6 @@ function drawNeedle(options) {
   /* Draw the needle in a nice read colour at the
   * angle that represents the options.speed value.
   */
-
   var iSpeedAsAngle = convertSpeedToAngle(options.speed, options),
       iSpeedAsAngleRad = degToRad(iSpeedAsAngle),
         innerTickX = options.radius - (Math.cos(iSpeedAsAngleRad) * 20),
@@ -318,10 +317,27 @@ function drawNeedle(options) {
         endNeedleX = options.radius - (Math.cos(iSpeedAsAngleRad) * options.radius),
         endNeedleY = options.radius - (Math.sin(iSpeedAsAngleRad) * options.radius),
         toX = -options.radius + endNeedleX,
-        toY = -options.radius + endNeedleY,
-        line = createLine(fromX, fromY, toX, toY, "rgb(255,0,0)", options.needleWidth, 0.6);
+        toY = -options.radius + endNeedleY;
 
-  drawLine(options, line);
+  var deltaX = (options.needleWidth * 0.5) * Math.sin(iSpeedAsAngleRad);
+  var deltaY = (options.needleWidth * 0.5) * Math.cos(iSpeedAsAngleRad);
+  
+  options.ctx.globalAlpha = 0.6;
+  options.ctx.lineWidth = options.needleLineWidth;
+  options.ctx.fillStyle = "red";
+  options.ctx.strokeStyle = "white";
+
+  // Draw a line using the line object passed in
+  options.ctx.beginPath();
+
+  // Set attributes of open
+  options.ctx.moveTo(fromX - deltaX, fromY + deltaY);
+  options.ctx.lineTo(toX - deltaX * 0.5, toY + deltaY * 0.5);
+  options.ctx.lineTo(toX + deltaX * 0.5, toY - deltaX * 0.5);
+  options.ctx.lineTo(fromX + deltaX, fromY - deltaY);
+  options.ctx.closePath();
+  options.ctx.stroke();
+  options.ctx.fill();
 
   // Two circle to draw the dial at the base (give its a nice effect?)
   drawNeedleDial(options, 0.6, "rgb(127, 127, 127)", "rgb(255,255,255)");
@@ -359,6 +375,7 @@ function buildOptionsAsJSON(canvas, scaleFactor, xOffset, yOffset, additionalOpt
     needleDialStart: 0,                         // Start radius of the needle dial
     needleDialStop: 30,                         // Stop radius of the needle dial
     needleWidth: 3,                             // Width of the needle
+    needleLineWidth: 1,                         // Width of the white part of needle
     
     // Color arc array. This is a list of the arc segments. You specify the color, alpha, and the start/stop
     // speeds for the specified color arc. 
@@ -423,7 +440,7 @@ function createSpeedometer(canvasId, options, center)
     return;
   }
 
-  speedometerData[canvasId] = { currentSpeed: 0.0, timer: null, decrementing: false };
+  speedometerData[canvasId] = { timer: null, decrementing: false };
   var speedParams = speedometerData[canvasId];
     
   speedParams['canvas'] = canvas;
@@ -466,17 +483,16 @@ function drawSpeedometer(targetSpeed, canvasId, doAnimation) {
   {
     createSpeedometer(canvasId);
   }
-  var speedParams = speedometerData[canvasId];
+  speedParams = speedometerData[canvasId];
+  canvas = speedParams.canvas;
+  options = speedParams.options;
 
   // If we're not animating then set the currentSpeed to target speed right now!
   if (!doAnimation)
   {
-    speedParams['currentSpeed'] = targetSpeed;
+    options.speed = targetSpeed;
   }
   
-  canvas = speedParams.canvas;
-  options = speedParams.options;
-
   // Clear canvas
   clearCanvas(canvas, options);
 
@@ -498,7 +514,7 @@ function drawSpeedometer(targetSpeed, canvasId, doAnimation) {
   // Draw the needle and base
   drawNeedle(options);
     
-  var currentSpeed = speedParams.currentSpeed;
+  var currentSpeed = options.speed;
   
   if(Math.abs(targetSpeed - currentSpeed) < 1) {
     clearTimeout(speedParams.timer);
@@ -511,15 +527,15 @@ function drawSpeedometer(targetSpeed, canvasId, doAnimation) {
   
   if(speedParams['decrementing']) {
     if(currentSpeed - 10 < targetSpeed)
-      speedParams['currentSpeed'] = currentSpeed - 1;
+      options.speed = currentSpeed - 1;
     else
-      speedParams['currentSpeed'] = currentSpeed - 5;
+      options.speed = currentSpeed - 5;
   } else {
   
     if(currentSpeed + 10 > targetSpeed)
-      speedParams['currentSpeed'] = currentSpeed + 1;
+      options.speed = currentSpeed + 1;
     else
-      speedParams['currentSpeed'] = currentSpeed + 5;
+      options.speed = currentSpeed + 5;
   }
   
   // Set timeout to redraw the speedometer with next value
