@@ -61,76 +61,37 @@ function createLine(fromX, fromY, toX, toY, fillStyle, lineWidth, alpha) {
   };
 }
 
-// Draws the metallic border of the speedometer 
-function drawOuterMetallicArc(options) {
-  options.ctx.beginPath();
-
-  // Nice shade of grey
-  options.ctx.fillStyle = "rgb(127,127,127)";
-
-  // Draw the outer circle
-  options.ctx.arc(0, 0,
-    options.metallicArcRadius,
-    0,
-    Math.PI,
-    true);
-
-  // Fill the last object
-  options.ctx.fill();
-}
-
-function drawInnerMetallicArc(options) {
-  /* Draw the metallic border of the speedometer 
-   * Inner white area
-   */
-
-  options.ctx.beginPath();
-
-  // White
-  options.ctx.fillStyle = "rgb(255,255,255)";
-
-  // Outer circle (subtle edge in the grey)
-  options.ctx.arc(0, 0,
-          (options.metallicArcRadius * 0.9),
-          0,
-          Math.PI,
-          true);
-
-  options.ctx.fill();
-}
-
 function drawMetallicArc(options) {
-  /* Draw the metallic border of the speedometer
-   * by drawing two semi-circles, one over lapping
-   * the other with a bot of alpha transparency
-   */
+  applyDefaultContextSettings(options);
 
-  drawOuterMetallicArc(options);
-  drawInnerMetallicArc(options);
+  options.ctx.beginPath();
+  
+  /* Draw the metallic border of the speedometer. */
+  var grd = options.ctx.createRadialGradient(0, 0, options.metallicArcRadius + 0.5 * options.metallicArcWidth,
+      0, 0, options.metallicArcRadius - 0.5 * options.metallicArcWidth);
+  grd.addColorStop(0, "rgb(127,127,127)");
+  grd.addColorStop(0.5, "rgb(225,225,225)");
+  grd.addColorStop(1, "rgb(127,127,127)");
+
+  options.ctx.strokeStyle = grd;
+  options.ctx.lineWidth = options.metallicArcWidth;
+
+  options.ctx.arc(0, 0, options.metallicArcRadius, 0, Math.PI, true);
+
+  // Stroke the last object
+  options.ctx.stroke();
 }
 
 function drawBackground(options) {
-  /* Black background with alpha transparency to
-   * blend the edges of the metallic edge and
-   * black background
-   */
-    var i = 0;
+  /* Draw the black background of the dial */
+  options.ctx.beginPath();
+  
+  applyDefaultContextSettings(options);
 
-  options.ctx.globalAlpha = 0.2;
-  options.ctx.fillStyle = "rgb(0,0,0)";
+  options.ctx.fillStyle = "black";
+  options.ctx.arc(0, 0, options.backStop, 0, Math.PI, true);
 
-  // Draw semi-transparent circles
-  for (i = options.backStart; i < options.backStop; i++) {
-    options.ctx.beginPath();
-
-    options.ctx.arc(0, 0,
-      i,
-      0,
-      Math.PI,
-      true);
-
-    options.ctx.fill();
-  }
+  options.ctx.fill();
 }
 
 function applyDefaultContextSettings(options) {
@@ -139,9 +100,9 @@ function applyDefaultContextSettings(options) {
    */
 
   options.ctx.lineWidth = options.defaultLineWidth;
-  options.ctx.globalAlpha = 0.5;
+  options.ctx.globalAlpha = 1.0;
   options.ctx.strokeStyle = "rgb(255, 255, 255)";
-  options.ctx.fillStyle = 'rgb(255,255,255)';
+  options.ctx.fillStyle = "rgb(255,255,255)";
 }
 
 function drawTicks(options) {
@@ -209,7 +170,7 @@ function drawTextMarkers(options) {
   applyDefaultContextSettings(options);
 
   // Font styling
-  options.ctx.font = options.font + " " + options.fontPx + "px";
+  options.ctx.font = options.fontPx + "px " + options.font;
   options.ctx.textBaseline = 'top';
 
   options.ctx.beginPath();
@@ -244,12 +205,7 @@ function drawSpeedometerPart(options, alphaValue, strokeStyle, startPos, stopPos
   options.ctx.lineWidth = options.colorArcWidth;
   options.ctx.strokeStyle = strokeStyle;
 
-  options.ctx.arc(0,
-    0,
-    options.colorArcRadius,
-    Math.PI + degToRad(startPos),
-    Math.PI + degToRad(stopPos),
-    false);
+  options.ctx.arc(0, 0, options.colorArcRadius, Math.PI + degToRad(startPos), Math.PI + degToRad(stopPos), false);
 
   options.ctx.stroke();
 }
@@ -265,31 +221,31 @@ function drawSpeedometerColourArc(options) {
   }
 }
 
-function drawNeedleDial(options, alphaValue, strokeStyle, fillStyle) {
+function drawNeedleDial(options) {
   /* Draws the metallic dial that covers the base of the
   * needle.
   */
-    var i = 0;
+  applyDefaultContextSettings(options);
 
-  options.ctx.globalAlpha = alphaValue;
-  options.ctx.lineWidth = options.needleDialWidth;
-  options.ctx.strokeStyle = strokeStyle;
-  options.ctx.fillStyle = fillStyle;
+  options.ctx.save();
+  
+  options.ctx.beginPath();
+  
+  options.ctx.rect(-speedDefWidth * 0.5, -speedDefHeight, speedDefWidth, speedDefHeight);
+  options.ctx.clip();
 
-  // Draw several transparent circles with alpha
-  for (i = options.needleDialStart; i < options.needleDialStop; i++) {
+  options.ctx.beginPath();
+  var grd = options.ctx.createRadialGradient(0, 0, options.needleDialStop,
+      0, 0, options.needleDialStop * 0.8);
+  grd.addColorStop(0, "rgb(200,200,200)");
+  grd.addColorStop(1, "rgb(127,127,127)");
 
-    options.ctx.beginPath();
-    options.ctx.arc(0,
-      0,
-      i,
-      0,
-      Math.PI,
-      true);
+  options.ctx.fillStyle = grd;
+  options.ctx.arc(0, 0, options.needleDialStop, 0, Math.PI, true);
 
-    options.ctx.fill();
-    options.ctx.stroke();
-  }
+  options.ctx.fill();
+  
+  options.ctx.restore();
 }
 
 function convertSpeedToAngle(speed, options) {
@@ -308,7 +264,7 @@ function drawNeedle(options) {
   /* Draw the needle in a nice read colour at the
   * angle that represents the options.speed value.
   */
-  var iSpeedAsAngle = convertSpeedToAngle(options.speed, options),
+ var iSpeedAsAngle = convertSpeedToAngle(options.speed, options),
       iSpeedAsAngleRad = degToRad(iSpeedAsAngle),
         innerTickX = options.radius - (Math.cos(iSpeedAsAngleRad) * 20),
         innerTickY = options.radius - (Math.sin(iSpeedAsAngleRad) * 20),
@@ -333,15 +289,15 @@ function drawNeedle(options) {
   // Set attributes of open
   options.ctx.moveTo(fromX - deltaX, fromY + deltaY);
   options.ctx.lineTo(toX - deltaX * 0.5, toY + deltaY * 0.5);
-  options.ctx.lineTo(toX + deltaX * 0.5, toY - deltaX * 0.5);
+  options.ctx.lineTo(toX + deltaX * 0.5, toY - deltaY * 0.5);
   options.ctx.lineTo(fromX + deltaX, fromY - deltaY);
   options.ctx.closePath();
   options.ctx.stroke();
   options.ctx.fill();
 
   // Two circle to draw the dial at the base (give its a nice effect?)
-  drawNeedleDial(options, 0.6, "rgb(127, 127, 127)", "rgb(255,255,255)");
-  drawNeedleDial(options, 0.2, "rgb(127, 127, 127)", "rgb(127,127,127)");
+//  drawNeedleDial(options, 0.6, "rgb(127, 127, 127)", "rgb(255,255,255)");
+  drawNeedleDial(options);
 }
 
 function buildOptionsAsJSON(canvas, scaleFactor, xOffset, yOffset, additionalOptions) {
@@ -355,7 +311,8 @@ function buildOptionsAsJSON(canvas, scaleFactor, xOffset, yOffset, additionalOpt
     numLargeTicks: 8,                           // The number of large ticks on speedometer
     speedLargeTickDelta: 10,                    // The Numerical increase for each large tick
     radius: 140,                                // Radius of the gauge
-    metallicArcRadius: 200,                     // Radius outside of metalic arc
+    metallicArcRadius: 190,                     // Radius of middle of metallic arc
+    metallicArcWidth: 20,                       // Width of the metallic arc
     scaleFactor: scaleFactor,                   // How much we're scaling from the nominal 440x220 default
     xOffset: xOffset,                           // Calculated xOffset if we're centering in canvas
     yOffset: yOffset,                           // Calculated yOffset if we're centering in canvas
@@ -403,12 +360,14 @@ function buildOptionsAsJSON(canvas, scaleFactor, xOffset, yOffset, additionalOpt
  */
 function clearCanvas(canvas, options) {
   options.ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+  // Setting width of canvas clears it. Due to the alpha usages clearRect() doesn't
+  // appear to work correctly.
   options.ctx.clearRect(0, 0, canvas.width, canvas.height);
+
   options.ctx.scale(options.scaleFactor, options.scaleFactor);
   options.ctx.translate(options.xOffset / options.scaleFactor + speedDefWidth * 0.5,
       options.yOffset / options.scaleFactor + speedDefHeight);
-  options.ctx.rect(-speedDefWidth * 0.5, -speedDefHeight, speedDefWidth, speedDefHeight);
-  options.ctx.clip();
   
   applyDefaultContextSettings(options);
 }
@@ -492,15 +451,17 @@ function drawSpeedometer(targetSpeed, canvasId, doAnimation) {
   {
     options.speed = targetSpeed;
   }
+
+  options.ctx.save();
   
   // Clear canvas
   clearCanvas(canvas, options);
 
-  // Draw the metallic styled edge
-  drawMetallicArc(options);
-
   // Draw the background
   drawBackground(options);
+
+  // Draw the metallic styled edge
+  drawMetallicArc(options);
 
   // Draw tick marks
   drawTicks(options);
@@ -513,6 +474,8 @@ function drawSpeedometer(targetSpeed, canvasId, doAnimation) {
 
   // Draw the needle and base
   drawNeedle(options);
+  
+  options.ctx.restore();
     
   var currentSpeed = options.speed;
   
